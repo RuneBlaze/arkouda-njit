@@ -28,7 +28,7 @@ module GraphMsg {
 
 
   use List; 
-  use LockFreeStack;
+  
   use Atomics;
   use IO.FormattedIO; 
   use AryUtil;
@@ -188,10 +188,10 @@ module GraphMsg {
              lsrc=tmpedges;
              tmpedges=ldst[iv];
              ldst=tmpedges;
-             //if (lWeightedFlag && sortw ){
-             //   tmpedges=le_weight[iv];
-             //   le_weight=tmpedges;
-             //}
+             if (lWeightedFlag && sortw ){
+               tmpedges=le_weight[iv];
+               le_weight=tmpedges;
+             }
 
   }//end combine_sort
 
@@ -1510,7 +1510,7 @@ module GraphMsg {
       var v_weight=makeDistArray(Nv,int);
       */
 
-      var dst,e_weight,srcR,dstR, iv: [edgeD] int ;
+      var dst,e_weight,e_weightR,srcR,dstR, iv: [edgeD] int ;
       var start_i,neighbourR, start_iR,depth, v_weight: [vertexD] int;
 
       var linenum:int=0;
@@ -1548,9 +1548,9 @@ module GraphMsg {
                            (a,b)=  line.splitMsgToTuple(2);
                       } else {
                            (a,b,c)=  line.splitMsgToTuple(3);
-                            //if ewlocal.contains(curline){
+                            // if ewlocal.contains(curline){
                             //    e_weight[curline]=c:int;
-                            //}
+                            // }
                       }
                       if a==b {
                           smLogger.error(getModuleName(),getRoutineName(),getLineNumber(),
@@ -1560,11 +1560,13 @@ module GraphMsg {
                           if srclocal.contains(curline) {
                                src[curline]=(a:int);
                                dst[curline]=(b:int);
+                               e_weight[curline] = (c:int);
                           }
                       } else {
                           if srclocal.contains(curline) {
                               src[curline]=(a:int)%Nv;
                               dst[curline]=(b:int)%Nv;
+                              e_weight[curline] = (c:int)%Nv;
                           }
                       }
                       curline+=1;
@@ -1598,7 +1600,7 @@ module GraphMsg {
 
       timer.clear();
       timer.start();
-      try  { combine_sort(src, dst,e_weight,WeightedFlag, false);
+      try  { combine_sort(src, dst,e_weight,WeightedFlag, true);
       } catch {
              try!  smLogger.error(getModuleName(),getRoutineName(),getLineNumber(),
                       "combine sort error");
@@ -1619,10 +1621,11 @@ module GraphMsg {
                   forall i in srcR.localSubdomain(){
                         srcR[i]=dst[i];
                         dstR[i]=src[i];
+                        e_weightR[i] = e_weight[i];
                    }
               }
           }
-          try  { combine_sort(srcR, dstR,e_weight,WeightedFlag, false);
+          try  { combine_sort(srcR, dstR,e_weightR,WeightedFlag, true);
           } catch {
                  try!  smLogger.error(getModuleName(),getRoutineName(),getLineNumber(),
                       "combine sort error");
@@ -1641,7 +1644,10 @@ module GraphMsg {
                .withDST_R(new shared SymEntry(dstR):GenSymEntry)
                .withSTART_IDX_R(new shared SymEntry(start_iR):GenSymEntry)
                .withNEIGHBOR_R(new shared SymEntry(neighbourR):GenSymEntry);
-
+          if (WeightedFlag) {
+              graph.withEDGE_WEIGHT(new shared SymEntry(e_weight):GenSymEntry)
+                   .withEDGE_WEIGHT_R(new shared SymEntry(e_weightR):GenSymEntry);
+          }
 
           if (AlignedArray==1) {
 
@@ -1834,10 +1840,9 @@ module GraphMsg {
                    .withA_NEIGHBOR(new shared DomArraySymEntry(aligned_nei):CompositeSymEntry);
 
         }// end of if (AlignedArray==1)
-        //if (WeightedFlag) {
-        //     graph.withEDGE_WEIGHT(new shared SymEntry(e_weight):GenSymEntry)
-        //          .withVERTEX_WEIGHT(new shared SymEntry(v_weight):GenSymEntry);
-        //}
+        if (WeightedFlag) {
+            graph.withEDGE_WEIGHT(new shared SymEntry(e_weight):GenSymEntry);
+        }
       }//end of else
       if (WriteFlag) {
                   var wf = open(FileName+".my.gr", iomode.cw);
@@ -2831,10 +2836,10 @@ module GraphMsg {
                    .withA_NEIGHBOR(new shared DomArraySymEntry(aligned_nei):CompositeSymEntry);
 
         }// end of if (AlignedArray==1)
-        //if (WeightedFlag) {
-        //     graph.withEDGE_WEIGHT(new shared SymEntry(e_weight):GenSymEntry)
-        //          .withVERTEX_WEIGHT(new shared SymEntry(v_weight):GenSymEntry);
-        //}
+        if (WeightedFlag) {
+            graph.withEDGE_WEIGHT(new shared SymEntry(e_weight):GenSymEntry);
+                //  .withVERTEX_WEIGHT(new shared SymEntry(v_weight):GenSymEntry);
+        }
       }
       if (WriteFlag) {
                   var wf = open(FileName+".my.pr", iomode.cw);
@@ -3242,6 +3247,12 @@ module GraphMsg {
            }
            when "e_weight" {
               var retE=toSymEntry(ag.getEDGE_WEIGHT(), int).a;
+              var attrEntry = new shared SymEntry(retE);
+              st.addEntry(attrName, attrEntry);
+              attrMsg =  'created ' + st.attrib(attrName);
+           }
+           when "e_weight_r" {
+              var retE=toSymEntry(ag.getEDGE_WEIGHT_R(), int).a;
               var attrEntry = new shared SymEntry(retE);
               st.addEntry(attrName, attrEntry);
               attrMsg =  'created ' + st.attrib(attrName);

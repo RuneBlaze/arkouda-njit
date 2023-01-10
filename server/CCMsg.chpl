@@ -21,7 +21,7 @@ module CCMsg {
   use Map;
   use DistributedDeque;
 
-  use LockFreeStack;
+  
   use Atomics;
   use IO.FormattedIO; 
   use GraphArray;

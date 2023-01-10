@@ -30,6 +30,7 @@ module GraphArray {
         A_SRC_R,        // Reverse of SRC, aligned array based on srcR
         A_DST_R,        // Reverse of DST, aligned array based on dstR
         EDGE_WEIGHT,  // Edge weight
+        EDGE_WEIGHT_R,
         VERTEX_WEIGHT // Vertex weight
     }
 
@@ -94,6 +95,7 @@ module GraphArray {
         proc withNEIGHBOR_R(a:GenSymEntry):SegGraph { components.add(Component.NEIGHBOR_R, a); return this; }
 
         proc withEDGE_WEIGHT(a:shared GenSymEntry):SegGraph { components.add(Component.EDGE_WEIGHT, a); return this; }
+        proc withEDGE_WEIGHT_R(a:shared GenSymEntry):SegGraph { components.add(Component.EDGE_WEIGHT_R, a); return this; }
         proc withVERTEX_WEIGHT(a:shared GenSymEntry):SegGraph { components.add(Component.VERTEX_WEIGHT, a); return this; }
 
         proc withA_SRC_R(a:shared CompositeSymEntry):SegGraph { acomponents.add(Component.A_SRC_R, a); return this; }
@@ -113,6 +115,7 @@ module GraphArray {
         proc hasNEIGHBOR():bool { return components.contains(Component.NEIGHBOR); }
         proc hasNEIGHBOR_R():bool { return components.contains(Component.NEIGHBOR_R); }
         proc hasEDGE_WEIGHT():bool { return components.contains(Component.EDGE_WEIGHT); }
+        proc hasEDGE_WEIGHT_R():bool { return components.contains(Component.EDGE_WEIGHT_R); }
         proc hasVERTEX_WEIGHT():bool { return components.contains(Component.VERTEX_WEIGHT); }
 
         proc hasA_SRC_R():bool { return acomponents.contains(Component.A_SRC_R); }
@@ -131,6 +134,7 @@ module GraphArray {
         proc getNEIGHBOR() { return components.getBorrowed(Component.NEIGHBOR); }
         proc getNEIGHBOR_R() { return components.getBorrowed(Component.NEIGHBOR_R); }
         proc getEDGE_WEIGHT() { return components.getBorrowed(Component.EDGE_WEIGHT); }
+        proc getEDGE_WEIGHT_R() { return components.getBorrowed(Component.EDGE_WEIGHT_R); }
         proc getVERTEX_WEIGHT() { return components.getBorrowed(Component.VERTEX_WEIGHT); }
         proc getA_SRC_R() { return acomponents.getBorrowed(Component.A_SRC_R); }
         proc getA_DST_R() { return acomponents.getBorrowed(Component.A_DST_R); }
